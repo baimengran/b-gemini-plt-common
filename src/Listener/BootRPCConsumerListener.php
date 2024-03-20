@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace GeminiD\PltCommon\Listener;
 
 use GeminiD\PltCommon\RPC\User\UserInterface;
+use Hyperf\Contract\ConfigInterface;
 use Hyperf\Event\Annotation\Listener;
 use Hyperf\Framework\Event\BootApplication;
 use Hyperf\Stringable\StrCache;
@@ -12,11 +13,31 @@ use Psr\Container\ContainerInterface;
 use Hyperf\Event\Contract\ListenerInterface;
 use function Hyperf\Support\env;
 
-#[Listener]
+#[Listener(priority:99)]
 class BootRPCConsumerListener implements ListenerInterface
 {
     public function __construct(protected ContainerInterface $container)
     {
+    }
+
+    public function listen(): array
+    {
+        return [
+            BootApplication::class
+        ];
+    }
+
+    public function process(object $event): void
+    {
+        $interfaces = [
+            UserInterface::class => ['plt-user', 9502]
+        ];
+        $consumers = [];
+        foreach ($interfaces as $interface => [$host, $port]) {
+            $consumers[] = $this->getConsumer($interface, $host, $port);
+        }
+        $this->container->get(ConfigInterface::class)->set('servers.consumers',$consumers);
+        var_dump($consumers);
     }
 
     protected function getConsumer(string $interface, string $host, int $port): array
@@ -34,10 +55,10 @@ class BootRPCConsumerListener implements ListenerInterface
             'protocol' => \Hyperf\RpcMultiplex\Constant::PROTOCOL_DEFAULT,
             'load_balancer' => 'random',
             // 这个消费者要从哪个服务中心获取节点信息，如不配置则不会从服务中心获取节点信息
-            'registry' => [
-                'protocol' => 'consul',
-                'address' => 'http://127.0.0.1:8500',
-            ],
+//            'registry' => [
+//                'protocol' => 'consul',
+//                'address' => 'http://127.0.0.1:8500',
+//            ],
             'nodes' => [
                 ['host' => $host, 'port' => $port],
             ],
@@ -62,22 +83,4 @@ class BootRPCConsumerListener implements ListenerInterface
 
     }
 
-    public function listen(): array
-    {
-        return [
-            BootApplication::class
-        ];
-    }
-
-    public function process(object $event): void
-    {
-        $interfaces = [
-            UserInterface::class => ['plt-user', 9502]
-        ];
-        $consumers = [];
-        foreach ($interfaces as $interface => [$host, $port]) {
-            $consumers[] = $this->getConsumer($interface, $host, $port);
-        }
-        var_dump($consumers);
-    }
 }
