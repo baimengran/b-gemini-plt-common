@@ -7,10 +7,12 @@ namespace GeminiD\PltCommon\Listener;
 use GeminiD\PltCommon\RPC\User\UserInterface;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Event\Annotation\Listener;
+use Hyperf\Event\Contract\ListenerInterface;
 use Hyperf\Framework\Event\BootApplication;
+use Hyperf\RpcMultiplex\Constant;
 use Hyperf\Stringable\StrCache;
 use Psr\Container\ContainerInterface;
-use Hyperf\Event\Contract\ListenerInterface;
+
 use function Hyperf\Support\env;
 
 #[Listener(priority:99)]
@@ -36,8 +38,7 @@ class BootRPCConsumerListener implements ListenerInterface
         foreach ($interfaces as $interface => [$host, $port]) {
             $consumers[] = $this->getConsumer($interface, $host, $port);
         }
-        $this->container->get(ConfigInterface::class)->set('servers.consumers',$consumers);
-        var_dump($consumers);
+        $this->container->get(ConfigInterface::class)->set('services.consumers',$consumers);
     }
 
     protected function getConsumer(string $interface, string $host, int $port): array
@@ -52,7 +53,7 @@ class BootRPCConsumerListener implements ListenerInterface
             'name' => $interface::NAME,
             'service' => $interface,
             'id' => $interface,
-            'protocol' => \Hyperf\RpcMultiplex\Constant::PROTOCOL_DEFAULT,
+            'protocol' => Constant::PROTOCOL_DEFAULT,
             'load_balancer' => 'random',
             // 这个消费者要从哪个服务中心获取节点信息，如不配置则不会从服务中心获取节点信息
 //            'registry' => [
@@ -60,7 +61,7 @@ class BootRPCConsumerListener implements ListenerInterface
 //                'address' => 'http://127.0.0.1:8500',
 //            ],
             'nodes' => [
-                ['host' => $host, 'port' => $port],
+                ['host' => $host, 'port' => (int)$port],
             ],
             'options' => [
                 'connect_timeout' => 5.0,
