@@ -3,6 +3,7 @@
 namespace GeminiD\PltCommon\RPC\User;
 
 use GeminiD\PltCommon\Constant\OAuthType;
+use JetBrains\PhpStorm\ArrayShape;
 
 interface UserInterface
 {
@@ -10,6 +11,7 @@ interface UserInterface
 
     public function ping(): bool;
 
-    public function firstByCode(string $code, string $appid, int|OAuthType $type = OAuthType::WECHAT_MINI_APP);
+    #[ArrayShape(['id'=>'int'])]
+    public function firstByCode(string $code, string $appid, int|OAuthType $type = OAuthType::WECHAT_MINI_APP):array;
 
 }
